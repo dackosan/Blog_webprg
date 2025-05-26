@@ -36,11 +36,11 @@ const modifyDateString = new Date().toISOString();
 
 const blogs = [
     {userId: 1, title: 'Életrajz', category: 'CV', content: 'Tas élete', creationDate: "2025-05-23T14:30:00.000Z", lastModifiedDate: modifyDateString},
-    {userId: 1, title: 'Életrajz', category: 'CV', content: 'Tas élete', creationDate: "2025-05-23T15:30:00.000Z", lastModifiedDate: modifyDateString},
-    {userId: 2, title: 'Életrajz', category: 'CV', content: 'Tas élete', creationDate: "2025-05-24T16:30:00.000Z", lastModifiedDate: modifyDateString},
-    {userId: 2, title: 'Életrajz', category: 'CV', content: 'Tas élete', creationDate: "2025-05-24T17:30:00.000Z", lastModifiedDate: modifyDateString},
-    {userId: 3, title: 'Életrajz', category: 'CV', content: 'Tas élete', creationDate: "2025-05-25T18:30:00.000Z", lastModifiedDate: modifyDateString},
-    {userId: 3, title: 'Életrajz', category: 'CV', content: 'Tas élete', creationDate: "2025-05-25T19:30:00.000Z", lastModifiedDate: modifyDateString},
+    {userId: 1, title: 'Motivációs Levél', category: 'CV', content: 'Tas motivációs levele', creationDate: "2025-05-23T15:30:00.000Z", lastModifiedDate: modifyDateString},
+    {userId: 2, title: 'Liberalizmus', category: 'Esszé', content: 'Bajó rövid esszéje', creationDate: "2025-05-24T16:30:00.000Z", lastModifiedDate: modifyDateString},
+    {userId: 2, title: 'A bethleni konszolidáció', category: 'Esszé', content: 'Bajó hosszú esszéje', creationDate: "2025-05-24T17:30:00.000Z", lastModifiedDate: modifyDateString},
+    {userId: 3, title: 'Góg és Magóg...', category: 'Vers', content: 'Memoriter', creationDate: "2025-05-25T18:30:00.000Z", lastModifiedDate: modifyDateString},
+    {userId: 3, title: 'Az a fekete folt', category: ' Novella', content: 'Kötelező olvasmány', creationDate: "2025-05-25T19:30:00.000Z", lastModifiedDate: modifyDateString},
 ];
 
 //for(const user of users) saveUser(user.name);
