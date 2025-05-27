@@ -8,14 +8,24 @@
 </head>
 <body>
     <h1>Blogok</h1>
-    <ul>
-        <li onclick="addUser()">felhasználó hozzáadás</li>
-        <li onclick="updateUser()">felhasználó módosítás</li>
-        <li onclick="deleteUser()">felhasználó törlés</li>
-        <li onclick="listBlogs()">blogok listázása</li>
-        <li onclick="addBlog()">blog hozzáadása</li>    
-    </ul>
-    <div id="tartalom"></div>
+    
+    <div id="tartalom" class="blog-container"></div>
+
+    <div id="modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close" id="closeModal">&times;</span>
+            <h2>Blog módosítása</h2>
+            <label for='title'>Cím:</label> 
+            <input type='text' id='title'>
+            <label for='category'>Kategória:</label> 
+            <input type='text' id='category'>
+            <label for='content'>Tartalom:</label> 
+            <input type='text' id='content'>
+            <button id='submit'>Mentés</button>
+            <p id='message'></p>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>

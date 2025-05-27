@@ -130,29 +130,22 @@ async function postBlogFunction(test) {
         console.log(error);
     }
 }
-async function putBlogFunction(test, id) {
-    try {
-        const res = await fetch(`http://localhost:3010/blogs/${id}`, {
-            method: 'PUT',
-            headers:
-            {
-                "Content-type": "application/json; charset=UTF-8"
-            },
-            body: test,
-        });
-        const data = await res.json();
+async function putBlogFunction(blog, id) {
+    const response = await fetch(`http://localhost:3010/blogs/${id}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: blog
+    });
 
-        if (!res.ok) {
-            console.log(data.description);
-            return;
-        }
-
-        return data;
-    }
-    catch (error) {
-        console.log(error);
+    if (!response.ok) {
+        const error = await response.text();
+        console.error('PUT error:', error);
+        throw new Error(`Hiba a PUT kérésben: ${response.status}`);
     }
 }
+
 async function deleteBlogFunction(id) {
     try {
         const res = await fetch(`http://localhost:3010/blogs/${id}`, {
@@ -174,8 +167,9 @@ async function deleteBlogFunction(id) {
 
 let blogs = [];
 let users = [];
-let selectedBlogId = 0;
+let selectedBlogId;
 const tartalom = document.getElementById("tartalom");
+listBlogs();
 
 function addUser(){
     tartalom.innerHTML = "<label for='userName'>Felhasználónév:</label> <input type='text' id='userName'>";
@@ -378,29 +372,24 @@ async function listBlogs() {
         return
     }
 
-    for(let i = 0; i < blogs.length; i++){
-        let selectedUser;
-        for(const user of users){
-            if(user.id == blogs[i].userId){
-                selectedUser = user;
-                break
-            }
-        }
+    for (let i = 0; i < blogs.length; i++) {
+        let selectedUser = users.find(user => user.id == blogs[i].userId);
 
-        tartalom.innerHTML += `<div class='lista' >`;
+        const blogDiv = document.createElement("div");
+        blogDiv.classList.add("lista");
 
-        let elemSzam =document.getElementsByClassName('lista').length;
-        const elem = document.getElementsByClassName('lista')[elemSzam-1];
+        blogDiv.innerHTML = `
+            <p>Felhasználó: ${selectedUser.name}</p>
+            <p>Cím: ${blogs[i].title}</p>
+            <p>Kategória: ${blogs[i].category}</p>
+            <p>Tartalma: ${blogs[i].content}</p>
+            <p>Készítve: ${blogs[i].creationDate}</p>
+            <p>Utoljára módosítva: ${blogs[i].lastModifiedDate}</p>
+            <button class="modify" onclick='updateBlog()' value="${blogs[i].id}">Modósítás</button>
+            <button class="deleteButton" value="${blogs[i].id}">Törlés</button>
+        `;
 
-        elem.innerHTML += `<p> felhasználó: ${selectedUser.name}</p>`; 
-        elem.innerHTML += `<p> cím: ${blogs[i].title}</p>` ;
-        elem.innerHTML += `<p> kategória: ${blogs[i].category}</p>` ;
-        elem.innerHTML += `<p> készítve: ${blogs[i].creationDate}</p>` ;
-        elem.innerHTML += `<p> utoljára módosítva: ${blogs[i].lastModifiedDate}</p>` ;
-        elem.innerHTML += `<p> tartalma: ${blogs[i].content}</p>`;
-        elem.innerHTML += `<button class='modify' onclick='updateBlog()' value='${blogs[i].id}'>blog módosítása</button>`;
-        elem.innerHTML += `<button class='deleteButton' onclick='deleteBlog()' value='${blogs[i].id}'>blog törlése</button>`;
-        tartalom.innerHTML += `</div>`;
+        tartalom.appendChild(blogDiv);
     }
 
     const modifyButtons = document.getElementsByClassName('modify');
@@ -410,75 +399,70 @@ async function listBlogs() {
         modifyButtons[i].addEventListener("click", (event) => { selectedBlogId = event.target.value });
     }
 
-    for(let i = 0; i< deleteButtons.length; i++){
-        deleteButtons[i].addEventListener("click", (event) => { selectedBlogId = event.target.value });
+    for (let i = 0; i < deleteButtons.length; i++) {
+        deleteButtons[i].addEventListener("click", async (event) => {
+            selectedBlogId = event.target.value;
+            const confirmed = confirm("Biztosan törölni szeretnéd ezt a blogot?");
+            if (confirmed) {
+                await deleteBlog();
+            }
+        });
     }
 }
 
-async function updateBlog(){
-    tartalom.innerHTML = "";
+async function updateBlog() {
+    const modal = document.getElementById("modal");
+    const titleInput = document.getElementById("title");
+    const categoryInput = document.getElementById("category");
+    const contentInput = document.getElementById("content");
 
     blogs = await getAllBlogFunction();
-    let blog;
-    for(const temp of blogs){
-        if(selectedBlogId == temp.id){
-            blog = temp;
-            break;
-        }
-    }
+    const blog = blogs.find(b => b.id == selectedBlogId);
 
-    tartalom.innerHTML += `<label for='title'>Cím:</label> <input type='text' id='title' value='${blog.title}'>`;
-    tartalom.innerHTML += `<label for='category'>Kategória:</label> <input type='text' id='category' value='${blog.category}'>`;
-    tartalom.innerHTML += `<label for='content'>Tartalom:</label> <input type='text' id='content'value='${blog.content}'>`;
-    tartalom.innerHTML += `<button id='submit' onclick='saveUpdatedBlog()'>felhasználó mentése</button>`;
-    tartalom.innerHTML+= "<p id='message'></p>";
+    titleInput.value = blog.title;
+    categoryInput.value = blog.category;
+    contentInput.value = blog.content;
+
+    modal.classList.remove("hidden");
+
+    document.getElementById("closeModal").addEventListener("click", () => {
+        modal.classList.add("hidden");
+    });
+
+    document.getElementById("submit").addEventListener("click", saveUpdatedBlog);
 }
 
 async function saveUpdatedBlog() {
-    blogs = await getAllBlogFunction();
-
-    let blog;
-    for(const temp of blogs){
-        if(selectedBlogId == temp.id){
-            blog = temp;
-            break;
-        }
-    }
-
-    if(document.getElementById("message").innerHTML != ""){
-        document.getElementById("message").innerHTML = "";
-    }
-
     const title = document.getElementById("title").value.trim();
     const category = document.getElementById("category").value.trim();
     const content = document.getElementById("content").value.trim();
+
+    if (!title || !category || !content) {
+        document.getElementById("message").innerText = "Adjon meg minden adatot";
+        return;
+    }
+
+    const blogs = await getAllBlogFunction();
+    const blog = blogs.find(b => b.id == selectedBlogId);
     
-    if(title != undefined && title.length > 0&& category != undefined && category.length > 0 && content != undefined && content.length > 0){
-        const d = new Date();
-        const dateString = `${d.getFullYear()}.${d.getMonth()}.${d.getDate()} ${d.getHours()}:${d.getMinutes()}:${d.getSeconds()}`;
-        let test = {
-            "userId": `${blog.userId}`,
-            "title": `${title}`,
-            "category": `${category}`,
-            "content": `${content}`,
-            "created": `${blog.creationDate}`,
-            "lastModified": `${dateString}`
-        };
+    const updated = {
+        userId: blog.userId,
+        title,
+        category,
+        content,
+        creationDate: blog.creationDate,
+        lastModifiedDate: new Date().toLocaleString('hu-HU')
+    };
 
-        await putBlogFunction(JSON.stringify(test), blog.id);
-
-        tartalom.innerHTML = "";
-    }
-    else {
-        document.getElementById("message").innerHTML += "Adjon meg minden adatot";
-    }
+    await putBlogFunction(JSON.stringify(updated), blog.id);
+    await listBlogs();
+    modal.classList.add("hidden");
 }
 
 async function deleteBlog() {
-    blogs = await getAllBlogFunction();
     await deleteBlogFunction(selectedBlogId);
 
     tartalom.innerHTML = "";
     
-    listBlogs();
+    await listBlogs();
 }
