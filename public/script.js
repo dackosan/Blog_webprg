@@ -207,32 +207,12 @@ async function saveUser() {
     }
 }
 
-async function updateUser(){
-    users = await getAllUserFunction();
-    if(users.length != 0){
-        tartalom.innerHTML = "<label for='user'>Válassz felhasználót:</label> <select name='user' id='user'>";
-
-        const menu= document.getElementById("user");
-        for(let i = 0; i<users.length; i++ ){
-            menu.innerHTML +=`<option value='${users[i].id}'>${users[i].name}</option>`;
-        }
-
-        tartalom.innerHTML += "</select>";
-        tartalom.innerHTML += "<label for='newUserName'>Új felhasználónév:</label> <input type='text' id='newUserName'>";
-        tartalom.innerHTML += "<button id='submit' onclick='saveUpdatedUser()'>felhasználó mentése</button>";
-        tartalom.innerHTML+= "<p id='message'></p>";
-    }
-    else{
-        tartalom.innerHTML = "<p id='message'> Nincs felhasználó!</p>";
-    }
-}
-
 async function saveUpdatedUser() {
     if(document.getElementById("message").innerHTML != ""){
         document.getElementById("message").innerHTML = "";
     }
 
-    const userName = document.getElementById("newUserName").value.trim();
+    const userName = document.getElementById("editedName").value.trim();
     users = await getAllUserFunction();
     if(userName != undefined && userName.length > 0){
         for(let i = 0; i < users.length; i++){
@@ -263,40 +243,20 @@ async function saveUpdatedUser() {
     }
 }
 
-async function deleteUser(){
-    users = await getAllUserFunction();
-
-    if(users.length != 0){
-        tartalom.innerHTML = "<label for='user'>Válassz felhasználót törléshez:</label> <select name='user' id='user'>";
-
-        const menu= document.getElementById("user");
-        for(let i = 0; i<users.length; i++ ){
-            menu.innerHTML +=`<option value='${users[i].id}'>${users[i].name}</option>`;
-        }
-
-        tartalom.innerHTML += "</select>";
-        tartalom.innerHTML += "<button id='submit' onclick='deleteSelectedUser()'>felhasználó törlése</button>";
-    }
-    else{
-        tartalom.innerHTML = "<p id='message'> Nincs felhasználó!</p>";
-    }
-}
-
 async function deleteSelectedUser() {
-    users = await getAllUserFunction();
-    blogs = await getAllBlogFunction();
+    const userSelect = document.getElementById("userForDelete");
+    const userId = userSelect.value;
+    const userName = userSelect.options[userSelect.selectedIndex].text;
 
-    const listOfSelects = document.getElementsByTagName("option");
-    let id;
-    for(let i = 0; i <listOfSelects.length; i++){
-        if(listOfSelects[i].selected){
-            id = listOfSelects[i].value;
-        }
+    const confirmed = confirm(`Biztosan törölni szeretnéd a következőt: "${userName}"?`);
+    if (!confirmed) {
+        return;
     }
 
-    await deleteUserFunction(id);
+    await deleteUserFunction(userId);
 
     tartalom.innerHTML = "";
+    await listBlogs();
 }
 
 async function addBlog(){
@@ -459,6 +419,12 @@ document.getElementById("add-user-button").addEventListener("click", showAddUser
 const addBlogButton = document.getElementById("add-blog-button");
 document.getElementById("add-blog-button").addEventListener("click", showAddBlogModal);
 
+const editUserButton = document.getElementById("edit-user-button");
+document.getElementById("edit-user-button").addEventListener("click", showEditUserModal);
+
+const deleteUserButton = document.getElementById("delete-user-button");
+document.getElementById("delete-user-button").addEventListener("click", showDeleteUserModal);
+
 function showAddUserModal() {
     const modalOverlay = document.getElementById("modal-overlay");
     const modalFields = document.getElementById("modal-fields");
@@ -524,6 +490,92 @@ async function showAddBlogModal() {
     document.getElementById("modal-form").onsubmit = async function (e) {
         e.preventDefault();
         await saveBlog();
+        modalOverlay.style.display = "none";
+        modalFields.innerHTML = "";
+        await listBlogs();
+    };
+}
+
+async function showEditUserModal() {
+    const modalOverlay = document.getElementById("modal-overlay");
+    const modalFields = document.getElementById("modal-fields");
+    const modalTitle = document.getElementById("modal-title");
+
+    const users = await getAllUserFunction();
+
+    modalTitle.textContent = "Felhasználó módosítása";
+
+    modalFields.innerHTML = `
+        <label for="newUserId">Felhasználó:</label>
+        <select id="newUserId" required>
+            ${users.map(user => `<option value="${user.id}">${user.name}</option>`).join("")}
+        </select>
+
+        <label for="newTitle">Új Felhasználónév:</label>
+        <input type="text" id="editedName" name="title" required>
+
+        <p id="message"></p>
+    `;
+
+    modalOverlay.style.display = "block";
+
+    const userSelect = document.getElementById("newUserId");
+    const nameInput = document.getElementById("editedName");
+
+    const initialSelectedUser = users.find(u => u.id == userSelect.value);
+    if (initialSelectedUser) {
+        nameInput.value = initialSelectedUser.name;
+    }
+
+    userSelect.addEventListener("change", () => {
+        const selectedUser = users.find(u => u.id == userSelect.value);
+        if (selectedUser) {
+            nameInput.value = selectedUser.name;
+        }
+    });
+
+    document.getElementById("modal-close").onclick = () => {
+        modalOverlay.style.display = "none";
+        modalFields.innerHTML = "";
+    };
+
+    document.getElementById("modal-form").onsubmit = async function (e) {
+        e.preventDefault();
+        await saveUpdatedUser();
+        modalOverlay.style.display = "none";
+        modalFields.innerHTML = "";
+        await listBlogs();
+    };
+}
+
+async function showDeleteUserModal(){
+    const modalOverlay = document.getElementById("modal-overlay");
+    const modalFields = document.getElementById("modal-fields");
+    const modalTitle = document.getElementById("modal-title");
+
+    const users = await getAllUserFunction();
+
+    modalTitle.textContent = "Felhasználó törlése";
+
+    modalFields.innerHTML = `
+        <label for="newUserId">Felhasználó:</label>
+        <select id="userForDelete" required>
+            ${users.map(user => `<option value="${user.id}">${user.name}</option>`).join("")}
+        </select>
+
+        <p id="message"></p>
+    `;
+
+    modalOverlay.style.display = "block";
+
+    document.getElementById("modal-close").onclick = () => {
+        modalOverlay.style.display = "none";
+        modalFields.innerHTML = "";
+    };
+
+    document.getElementById("modal-form").onsubmit = async function (e) {
+        e.preventDefault();
+        await deleteSelectedUser();
         modalOverlay.style.display = "none";
         modalFields.innerHTML = "";
         await listBlogs();
