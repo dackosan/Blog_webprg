@@ -322,42 +322,28 @@ async function addBlog(){
 }
 
 async function saveBlog() {
-    if(document.getElementById("message").innerHTML != ""){
-        document.getElementById("message").innerHTML = "";
-    }
+    const title = document.getElementById("newTitle").value.trim();
+    const category = document.getElementById("newCategory").value.trim();
+    const content = document.getElementById("newContent").value.trim();
+    const userId = document.getElementById("newUserId").value;
+    const message = document.getElementById("message");
 
-    const title = document.getElementById("title").value.trim();
-    const category = document.getElementById("category").value.trim();
-    const content = document.getElementById("content").value.trim();
+    message.innerHTML = "";
 
-    users = await getAllUserFunction();
-    if(title != undefined && title.length > 0&& category != undefined && category.length > 0 && content != undefined && content.length > 0){
-        const listOfSelects = document.getElementsByTagName("option");
-        let userId;
-        for(let i = 0; i <listOfSelects.length; i++){
-            if(listOfSelects[i].selected){
-                userId = listOfSelects[i].value;
-            }
-        }
-
-        const d = new Date();
-        const dateString = `${d.getFullYear()}.${d.getMonth()}.${d.getDate()} ${d.getHours()}:${d.getMinutes()}:${d.getSeconds()}`;
-        let test = {
-            "userId": userId,
-            "title": `${title}`,
-            "category": `${category}`,
-            "content": `${content}`,
-            "creationDate": `${dateString}`,
-            "lastModifiedDate": `${dateString}`
-
+    if (title && category && content && userId) {
+        const blog = {
+            userId: parseInt(userId),
+            title,
+            category,
+            content,
+            creationDate: new Date().toLocaleString('hu-HU'),
+            lastModifiedDate: new Date().toLocaleString('hu-HU')
         };
 
-        await postBlogFunction(JSON.stringify(test));
-
-        tartalom.innerHTML = "";
-    }
-    else {
-        document.getElementById("message").innerHTML = "Adjon meg minden adatot!";
+        await postBlogFunction(JSON.stringify(blog));
+        await listBlogs();
+    } else {
+        message.innerHTML = "Adjon meg minden adatot!";
     }
 }
 
@@ -379,12 +365,12 @@ async function listBlogs() {
         blogDiv.classList.add("lista");
 
         blogDiv.innerHTML = `
-            <p>Felhasználó: ${selectedUser.name}</p>
-            <p>Cím: ${blogs[i].title}</p>
-            <p>Kategória: ${blogs[i].category}</p>
-            <p>Tartalma: ${blogs[i].content}</p>
-            <p>Készítve: ${blogs[i].creationDate}</p>
-            <p>Utoljára módosítva: ${blogs[i].lastModifiedDate}</p>
+            <p><strong>Felhasználó</strong>: ${selectedUser.name}</p>
+            <p><strong>Cím</strong>: ${blogs[i].title}</p>
+            <p><strong>Kategória</strong>: ${blogs[i].category}</p>
+            <p><strong>Tartalom</strong>: ${blogs[i].content}</p>
+            <p><strong>Készítve</strong>: ${blogs[i].creationDate}</p>
+            <p><strong>Útoljára modósítva</strong>: ${blogs[i].lastModifiedDate}</p>
             <button class="modify" onclick='updateBlog()' value="${blogs[i].id}">Modósítás</button>
             <button class="deleteButton" value="${blogs[i].id}">Törlés</button>
         `;
@@ -411,7 +397,7 @@ async function listBlogs() {
 }
 
 async function updateBlog() {
-    const modal = document.getElementById("modal");
+    const modal = document.getElementById("list-modal");
     const titleInput = document.getElementById("title");
     const categoryInput = document.getElementById("category");
     const contentInput = document.getElementById("content");
@@ -465,4 +451,81 @@ async function deleteBlog() {
     tartalom.innerHTML = "";
     
     await listBlogs();
+}
+
+const addUserButton = document.getElementById("add-user-button");
+document.getElementById("add-user-button").addEventListener("click", showAddUserModal);
+
+const addBlogButton = document.getElementById("add-blog-button");
+document.getElementById("add-blog-button").addEventListener("click", showAddBlogModal);
+
+function showAddUserModal() {
+    const modalOverlay = document.getElementById("modal-overlay");
+    const modalFields = document.getElementById("modal-fields");
+    const modalTitle = document.getElementById("modal-title");
+
+    modalTitle.textContent = "Új felhasználó hozzáadása";
+    modalFields.innerHTML = `
+        <label for="userName">Felhasználónév:</label>
+        <input type="text" id="userName" name="userName" required>
+        <p id="message"></p>
+    `;
+
+    modalOverlay.style.display = "block";
+
+    document.getElementById("modal-close").onclick = () => {
+        modalOverlay.style.display = "none";
+        modalFields.innerHTML = "";
+    };
+
+    document.getElementById("modal-form").onsubmit = async function (e) {
+        e.preventDefault();
+        await saveUser();
+        modalOverlay.style.display = "none";
+        document.getElementById("modal-fields").innerHTML = "";
+        await listBlogs();
+    };
+}
+
+async function showAddBlogModal() {
+    const modalOverlay = document.getElementById("modal-overlay");
+    const modalFields = document.getElementById("modal-fields");
+    const modalTitle = document.getElementById("modal-title");
+
+    const users = await getAllUserFunction();
+
+    modalTitle.textContent = "Új blog hozzáadása";
+
+    modalFields.innerHTML = `
+        <label for="userId">Felhasználó:</label>
+        <select id="newUserId" required>
+            ${users.map(user => `<option value="${user.id}">${user.name}</option>`).join("")}
+        </select>
+
+        <label for="title">Cím:</label>
+        <input type="text" id="newTitle" name="title" required>
+
+        <label for="category">Kategória:</label>
+        <input type="text" id="newCategory" name="category" required>
+
+        <label for="content">Tartalom:</label>
+        <input type="text" id="newContent" name="content" required>
+
+        <p id="message"></p>
+    `;
+
+    modalOverlay.style.display = "block";
+
+    document.getElementById("modal-close").onclick = () => {
+        modalOverlay.style.display = "none";
+        modalFields.innerHTML = "";
+    };
+
+    document.getElementById("modal-form").onsubmit = async function (e) {
+        e.preventDefault();
+        await saveBlog();
+        modalOverlay.style.display = "none";
+        modalFields.innerHTML = "";
+        await listBlogs();
+    };
 }
